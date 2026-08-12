@@ -2071,8 +2071,13 @@ export default function Sidebar() {
   const showLessSettled = useCallback(() => setSettledVisibleCount(SETTLED_TAIL_INITIAL_COUNT), []);
   // One paging row serves both directions: it offers the next page while the
   // tail has one, and collapses back to the initial page once fully expanded.
+  // Gated on the tail still exceeding the initial page — un-settling or
+  // deleting threads can shrink the list back to (or below) that page without
+  // resetting a stale settledVisibleCount, and a "Show less" with nothing
+  // left to collapse would be an orphaned row.
   const settledPagingVisible =
-    hiddenSettledCount > 0 || settledVisibleCount > SETTLED_TAIL_INITIAL_COUNT;
+    settledThreads.length > SETTLED_TAIL_INITIAL_COUNT &&
+    (hiddenSettledCount > 0 || settledVisibleCount > SETTLED_TAIL_INITIAL_COUNT);
   const [settledShelfExpanded, setSettledShelfExpanded] = useLocalStorage(
     SETTLED_SHELF_EXPANDED_KEY,
     true,
