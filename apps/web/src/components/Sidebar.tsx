@@ -2068,6 +2068,11 @@ export default function Sidebar() {
     () => setSettledVisibleCount((count) => count + SETTLED_TAIL_PAGE_COUNT),
     [],
   );
+  const showLessSettled = useCallback(() => setSettledVisibleCount(SETTLED_TAIL_INITIAL_COUNT), []);
+  // One paging row serves both directions: it offers the next page while the
+  // tail has one, and collapses back to the initial page once fully expanded.
+  const settledPagingVisible =
+    hiddenSettledCount > 0 || settledVisibleCount > SETTLED_TAIL_INITIAL_COUNT;
   const [settledShelfExpanded, setSettledShelfExpanded] = useLocalStorage(
     SETTLED_SHELF_EXPANDED_KEY,
     true,
@@ -3722,16 +3727,43 @@ export default function Sidebar() {
                   }
                   return items;
                 })()}
-                {settledShelfExpanded && hiddenSettledCount > 0 ? (
-                  <li className="list-none">
-                    <button
-                      type="button"
-                      onClick={showMoreSettled}
-                      className="flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 text-left text-sm text-sidebar-muted-foreground/55 hover:bg-sidebar-row-hover hover:text-sidebar-foreground"
-                    >
-                      <PlusIcon aria-hidden className="size-4 shrink-0" />
-                      Show {Math.min(hiddenSettledCount, SETTLED_TAIL_PAGE_COUNT)} more
-                    </button>
+                {settledShelfExpanded && settledPagingVisible ? (
+                  <li className="group/settled-paging relative list-none">
+                    {hiddenSettledCount > 0 ? (
+                      <button
+                        type="button"
+                        onClick={showMoreSettled}
+                        className="flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 text-left text-sm text-sidebar-muted-foreground/55 hover:bg-sidebar-row-hover hover:text-sidebar-foreground"
+                      >
+                        <PlusIcon aria-hidden className="size-4 shrink-0" />
+                        Show {Math.min(hiddenSettledCount, SETTLED_TAIL_PAGE_COUNT)} more
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={showLessSettled}
+                        className="flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 text-left text-sm text-sidebar-muted-foreground/55 hover:bg-sidebar-row-hover hover:text-sidebar-foreground"
+                      >
+                        <Undo2Icon aria-hidden className="mb-px size-4 shrink-0" />
+                        Show less
+                      </button>
+                    )}
+                    {/* Collapsing the tail is the secondary action while pages
+                        remain: it rides the row on hover like the un-settle
+                        rollback, so paging stays one row at any depth. The
+                        thread rows anchor that rollback inside their px-2.5
+                        content box, so offset by the same padding here to land
+                        on the shared right-hand axis. */}
+                    {hiddenSettledCount > 0 && settledVisibleCount > SETTLED_TAIL_INITIAL_COUNT ? (
+                      <button
+                        type="button"
+                        aria-label="Show less"
+                        onClick={showLessSettled}
+                        className="pointer-events-none absolute inset-y-0 right-2.5 -mr-1 inline-flex cursor-pointer items-center rounded-md bg-transparent px-1.5 text-xs text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:pointer-events-auto focus-visible:opacity-100 group-hover/settled-paging:pointer-events-auto group-hover/settled-paging:opacity-100"
+                      >
+                        <Undo2Icon aria-hidden className="mb-px size-3.5" />
+                      </button>
+                    ) : null}
                   </li>
                 ) : null}
               </ul>
